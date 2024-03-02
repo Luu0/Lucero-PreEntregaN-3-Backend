@@ -22,10 +22,6 @@ const SERVER_PORT = config.port;
 
 console.log(config);
 
-
-// const SERVER_PORT = 8080;
-
-
 mongoose.connect('mongodb+srv://Lu0:Lu0@ecomerce.zb53nge.mongodb.net/?retryWrites=true&w=majority')
 .then(() => {
     console.log('Connection success');
@@ -40,7 +36,6 @@ const io = new Server(httpServer);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
 
 //handlbars config
 app.engine("hbs",handlebars.engine({
@@ -78,7 +73,6 @@ initializePassport();
 app.use(passport.initialize());
 app.use(passport.session());
 
-
 app.use("/", viewsRouter); 
 app.use("/api/products",productRouter);
 app.use("/api/carts",cartRouter);
@@ -86,36 +80,16 @@ app.use("/users",userviews);
 app.use("/api/sessions",sessionrouter);
 app.use("/github", githubloginrouter);
 
+io.on('connection', (socket) => {
+  console.log('Nuevo cliente conectado');
 
-// io.on('connection', (socket) => {
-//   console.log('Nuevo cliente conectado');
-
-//   socket.on('chat message', async (msg) => {
-//     // Guardar el mensaje en la base de datos
-//     try {
-//       await messageDao.createMessage({ user: msg.user, message: msg.content });
-//     } catch (error) {
-//       console.log(error);
-//     }
-
-//     // Emitir el mensaje a todos los clientes conectados
-//     io.emit('chat message', msg);
-//   });
-// });
-
-
-io.on("connection", (socket) => {
-  console.log("Nuevo cliente conectado");
-
-  socket.on("post_send", async (data) => {
-    console.log(data);
+  socket.on('chat message', async (msg) => {
     try {
-      await manager.addProduct(data);
-      io.emit("products", manager.getProducts()); 
+      await messageDao.createMessage({ user: msg.user, message: msg.content });
     } catch (error) {
       console.log(error);
     }
-  });
 
-  socket.emit("products",manager.getProducts())
+    io.emit('chat message', msg);
+  });
 });

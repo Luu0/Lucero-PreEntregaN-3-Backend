@@ -1,4 +1,4 @@
-import { postModel } from "../models/product.model.js";
+import { postModel } from "../../../models/product.model.js";
 
 export async function findProducts(limit = 10, page = 1, query, sort) {
   let consult = {}
@@ -21,6 +21,6 @@ export async function deleteProduct(_id) {
   return await postModel.findByIdAndDelete({ _id });
 }
 
-export async function getProductById(id){
-  return await postModel.findById(id)
+export async function getProductById(_id){
+  return await postModel.findById(_id)
 }

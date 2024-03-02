@@ -1,4 +1,8 @@
-import { findCart, findById, createCart, updateProducts, deleteProductFromCart } from "../Services/cart.services.js";
+import { findCart, findById, createCart, updateProducts, deleteProductFromCart } from "../Services/Daos/cart/cart.services.js";
+import { findProducts,createProduct,updateProduct,deleteProduct,getProductById } from "../Services/Daos/product/product.services.js";
+import {createTicket} from "../Services/Daos/ticket/ticket.dao.js"
+import TicketDto from "../Services/dto/ticket.dto.js"
+import sendMail  from "../utils/nodeMailer.js";
 
 export const getcartContrller = async (req, res) => {
   try{
@@ -16,18 +20,25 @@ export const getcartContrller = async (req, res) => {
 };
 
 export const createCartController = async (req, res) => {
-  try {
-    const Cart = await createCart(req.body);
+  const { products } = req.body;
 
-    res.json({
-      Cart,
-      message: "Cart created",
+  if (!products || !Array.isArray(products) || products.length === 0) {
+    return res.status(400).json({
+      error: "Please send a non-empty array of products to create your cart.",
     });
+  }
+
+  try {
+    const productMap = products.map(({ productId, quantity }) => ({
+      product: productId,
+      quantity: quantity || 1,
+    }));
+
+    const newCart = await createCart(productMap);
+
+    res.status(200).json({ message: "Successfully created!", cartCreated: newCart });
   } catch (error) {
-    res.json({
-      error,
-      message: "Error",
-    });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -72,26 +83,32 @@ export const UpdateCartController = async (req, res) => {
   }
 };
 
-export const UpdateCartProductController = async (req, res) => {
+export const addProductToCartController = async (req, res) => {
   try {
-    let cart = await findById(req.params.cid);
-
-    if (!cart) {
-      return res.status(404).json({ error: "Cart not found" });
+    if (req.session.user.rol !== 'user') {
+      return res.status(401).json({ message: "Acceso denegado" });
     }
-    const productIndex = cart.products.findIndex((p) => p._id.toString() === req.params.pid);
+    const { cid, pid } = req.params;
+    const product = await getProductById(pid);
+    const cart = await findById(cid);
 
-    if (productIndex !== -1) {
-      cart.products[productIndex].quantity = req.body.quantity;
+    if (!product || !cart) {
+      return res.status(404).json({ error: "Producto o carrito inexistente" });
+    }
 
-      const updatedCart = await updateProducts(cart._id, cart);
+    const existingProductIndex = cart.products.findIndex(e => e.product._id.toString() === product._id.toString());
 
-      return res.status(200).json(updatedCart);
+    if (existingProductIndex !== -1) {
+      cart.products[existingProductIndex].quantity += 1;
     } else {
-      return res.status(404).json({ error: "Product not found in Cart" });
+      cart.products.push({ product: product._id, quantity: 1 });
     }
+
+    const updatedCart = await updateProducts(cid, cart);
+    res.status(200).json(updatedCart);
   } catch (error) {
-    res.status(500).json({ error: error.message || "Internal server error" });
+    console.error(error);
+    res.status(500).json({ error: "Error interno del servidor" });
   }
 };
 
@@ -118,3 +135,41 @@ export const DeleteCartProductController = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+export const finishPurchaseController = async (req,res) =>{
+  try {
+    let cart = await findById(req.params.cid);
+    let total_price = 0;
+    let unstocked_products = [];
+    for (const item of cart.products) {
+      let product = await getProductById(item.product);
+      if (product) {
+        if (product.stock >= item.quantity) {
+          total_price += item.quantity * product.price;
+          let stockLowering = await updateProduct(item.product, { stock: product.stock - item.quantity });
+        } else {
+          unstocked_products.push({ product: product._id, quantity: item.quantity });
+          console.log(item.quantity)
+        }
+      } else {
+        // Manejar el caso en el que no se encuentra el producto
+        console.log(`Product not found for ID: ${item.product}`);
+      }
+    }
+
+
+    if(total_price > 0){
+      cart.products = unstocked_products
+      let newCart = await updateProducts(req.params.cid,cart)
+      let newTicket = await createTicket({code:`${req.params.cid}_${Date.now()}`,amount:total_price,purchaser:req.session.user.email})
+      await sendMail(req.session.user.email, newTicket )
+      return res.status(200).json(new TicketDto(newTicket))
+    } 
+    else{
+      return res.status(404).json({message:"No se realizó ninguna compra"})
+    }
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+}

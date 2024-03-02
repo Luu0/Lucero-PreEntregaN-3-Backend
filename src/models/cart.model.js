@@ -1,11 +1,33 @@
 import mongoose from "mongoose";
 import { Schema,model } from "mongoose";
 
+
+// const productSchema = new mongoose.Schema(
+//   {
+//     productId: { type: Schema.Types.ObjectId, ref: "products", required: true },
+//     quantity: { type: Number, required: true, min: 1 },
+//   },
+//   { _id: false }
+// );
+
+// const cartSchema = new mongoose.Schema({
+//   products: { type: [productSchema], required: true, max: 25 },
+// });
+
+
 const cartSchema = new mongoose.Schema({
-  products: [{
-  product: { type: Schema.Types.ObjectId, ref: "Product" },
-  quantity: { type: Number, required: true, default: 1 },
-  }],
+  products:{
+    type:[
+      {
+        product:{
+          type:mongoose.Schema.Types.ObjectId,
+          ref:'products'
+        },
+        quantity:{type:Number, default: 1}
+      },
+    ],
+    _id:false
+  }
 });
 
 const CartModel = model("carts", cartSchema);

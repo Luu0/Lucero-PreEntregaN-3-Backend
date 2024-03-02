@@ -34,15 +34,13 @@ res.send({status:"success", msg:"User created"})
 router.post('/login', passport.authenticate("login", {
   failureRedirect: "api/session/fail-login"
 }), async (req,res) => {
-  // let rol;
-  // if(email == "adminCoder@coder.com" && password == "adminCod3r123"){
-  //     rol = "admin"
-  // }
-  // else{
-  //     rol = "user"
-  // }
+  let rol;
+  if(req.body.email == "adminCoder@coder.com" && req.body.password == "adminCod3r123"){
+      rol = "admin";
+  } else {
+      rol = "user";
+  }
   const user = req.user;
-  const rol = "user"
 
   req.session.user = {
       name: `${user.first_name} ${user.last_name}`,

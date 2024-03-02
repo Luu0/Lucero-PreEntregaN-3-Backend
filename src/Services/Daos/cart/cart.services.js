@@ -1,16 +1,19 @@
-import { CartModel } from "../models/cart.model.js";
+import { CartModel } from "../../../models/cart.model.js";
 
 export async function findCart(){
   return await CartModel.find();
 }
 
-export async function findById(_id) {
-  return await CartModel.findById(_id);
+export async function findById(id) {
+  return await CartModel.findById(id);
 }
 
-export async function createCart(cart) {
-  return await CartModel.create(cart);
-}
+
+export async function createCart  (products) {
+  return await CartModel.create({
+    products,
+  });
+};
 
 export async function updateProducts(cid,cart){
   return await CartModel.findByIdAndUpdate(cid, cart)

@@ -1,4 +1,4 @@
-import { findProducts,createProduct,updateProduct,deleteProduct,getProductById } from "../Services/product.services.js";
+import { findProducts,createProduct,updateProduct,deleteProduct,getProductById } from "../Services/Daos/product/product.services.js";
 
 export const FindProductsController = async (req, res) => {
   try {
@@ -18,23 +18,32 @@ export const FindProductsController = async (req, res) => {
   }
 };
 
-export const FindProductsByIDController = async (req,res)=>{
-  const {id} = req.params;
-  try{
-    const product = getProductById(Number(id));
+export const FindProductsByIDController = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const product = await getProductById(id);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
     return res.status(200).json(product);
-  }catch(error){
-    return res.status(404).json({ message: error.message });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
   }
 };
 
+
 export const CreateProductController = async (req, res) => {
   try {
-    const post = await createProduct(req.body);
-    res.json({
-      post,
-      message: "Product created",
-    });
+    if(req.session.user.rol==="admin"){
+      const post = await createProduct(req.body);
+      res.json({
+        post,
+        message: "Product created",
+      });
+    }
+    else{
+      res.status(401).json({message:"Acceso denegado"})
+    }
   } catch (error) {
     console.log(error);
     res.json({
@@ -46,14 +55,20 @@ export const CreateProductController = async (req, res) => {
 
 export const UpdateProductController = async (req,res)=>{
   try {
-    const { id } = req.params;
 
-    const product = await updateProduct(id, req.body);
-
-    res.json({
-      product,
-      message: "Product updated",
-    });
+    if(req.session.user.rol==="admin"){
+      const { id } = req.params;
+  
+      const product = await updateProduct(id, req.body);
+  
+      res.json({
+        product,
+        message: "Product updated",
+      });
+    }
+    else{
+      res.status(401).json({message:"Acceso denegado"})
+    }
   } catch (error) {
     console.log(error);
     res.json({
@@ -65,13 +80,18 @@ export const UpdateProductController = async (req,res)=>{
 
 export const DeleteProductController = async (req,res)=>{
   try {
-    const { id } = req.params;
-    const cart = await deleteProduct(id);
-
-    res.json({
-      cart,
-      message: "Product deleted",
-    });
+    if(req.session.user.rol==="admin"){
+      const { id } = req.params;
+      const cart = await deleteProduct(id);
+  
+      res.json({
+        cart,
+        message: "Product deleted",
+      });
+    }
+    else{
+      res.status(401).json({message:"Acceso denegado"})
+    }
   } catch (error) {
     console.log(error);
     res.json({
