@@ -1,4 +1,4 @@
-const authMiddleware = (req, res, next) => {
+export const authMiddlewareChat = (req, res, next) => {
   console.log(req.session.user)
 
     if (!req.session.user) {
@@ -14,4 +14,12 @@ const authMiddleware = (req, res, next) => {
   next();
 };
 
-export default authMiddleware;
+
+export const authMiddlewareUser = (req, res, next) => {
+  console.log(req.session.user)
+
+    if (!req.session.user) {
+      return res.status(401).json({ message: 'No autorizado. Debes iniciar sesión.' });
+  }
+  next();
+}

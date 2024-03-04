@@ -1,6 +1,6 @@
 import { Router } from "express";
 import productDao from "../daos/dbManager/product.dao.js";
-import authMiddleware from "./Custom/authMiddleware.js";
+import {authMiddlewareChat} from "./Custom/authMiddleware.js";
 
 
 const router = Router();
@@ -24,7 +24,7 @@ router.get("/products", async (req,res) => {
   })
 })
 
-router.get("/chat",authMiddleware,(req,res)=>{
+router.get("/chat",authMiddlewareChat,(req,res)=>{
   res.render("chat.hbs");
 });
 

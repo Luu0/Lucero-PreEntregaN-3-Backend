@@ -1,4 +1,5 @@
 import {Router} from 'express'
+import { authMiddlewareUser } from './Custom/authMiddleware.js  ';
 
 const router = Router();
 
@@ -10,7 +11,7 @@ router.get("/register", (req,res)=>{
     res.render('register')
 })
 
-router.get("/", (req,res)=>{
+router.get("/",authMiddlewareUser, (req,res)=>{
     res.render('profile', {user:req.session.user})
 })
 
